@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
+import { createInterface } from "node:readline";
 import { pathToFileURL } from "node:url";
 
 export const MIB = 1024 * 1024;
 export const MEGABIT = 1_000_000;
 const USAGE = [
-  "Использование: node speedtest.mjs <URL> [-n 10] [--timeout 30] [--csv файл.csv]",
+  "Использование: node speedtest.mjs [URL] [-n 10] [--timeout 30] [--csv файл.csv]",
+  "  URL             адрес для запросов; если не указан и запуск в терминале, будет запрошен в консоли",
   "  -n, --requests  количество запросов (по умолчанию 10)",
   "  --timeout       таймаут одного запроса в секундах (по умолчанию 30)",
   "  --csv           сохранить результаты в CSV-файл",
 ].join("\n");
 export const RESULT_FIELDS = ["№", "статус", "время, мс", "объём, байт", "скорость, Мбит/с", "ошибка"];
+const URL_PROMPT = "Адрес (URL, например https://example.com/big.jpg): ";
 
 function fail(message) {
   console.error(`Ошибка: ${message}`);
@@ -26,6 +29,37 @@ export function checkUrl(url) {
   } catch {
     return false;
   }
+}
+
+export function promptUrl(input = process.stdin, output = process.stdout) {
+  return new Promise((resolve) => {
+    const rl = createInterface({ input, output });
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      rl.close();
+      resolve(value);
+    };
+
+    rl.on("SIGINT", () => {
+      output.write("\n");
+      finish("");
+    });
+    // Ctrl+D: чтение ввода закончилось, незавершённый question не выполнится сам.
+    rl.on("close", () => finish(""));
+
+    const ask = () => {
+      rl.question(URL_PROMPT, (answer) => {
+        if (settled) return;
+        const value = answer.trim();
+        if (!value || checkUrl(value)) return finish(value);
+        console.error("Адрес должен начинаться с http:// или https://");
+        ask();
+      });
+    };
+    ask();
+  });
 }
 
 export function speedMbit(bytes, seconds) {
@@ -191,9 +225,15 @@ async function main() {
     console.log(USAGE);
     return;
   }
-  if (positionals.length !== 1) fail("укажите один адрес");
+  if (positionals.length > 1) fail("укажите один адрес");
 
-  const [url] = positionals;
+  let [url = ""] = positionals;
+  if (!url) {
+    if (!process.stdin.isTTY) fail("укажите адрес: node speedtest.mjs https://example.com/big.jpg");
+    url = await promptUrl();
+    if (!url) fail("адрес не введён");
+  }
+
   const count = Number(values.requests);
   const timeoutSec = Number(values.timeout);
   if (!checkUrl(url)) fail("адрес должен начинаться с http:// или https://");
