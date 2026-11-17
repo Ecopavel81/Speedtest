@@ -8,7 +8,8 @@
     "speedtest": "speedtest.mjs"
   },
   "scripts": {
-    "start": "node speedtest.mjs"
+    "start": "node speedtest.mjs",
+    "web": "node server.mjs"
   },
   "engines": {
     "node": ">=18.3"

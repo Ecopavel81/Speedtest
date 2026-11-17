@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
+import { pathToFileURL } from "node:url";
 
-const MIB = 1024 * 1024;
-const MEGABIT = 1_000_000;
+export const MIB = 1024 * 1024;
+export const MEGABIT = 1_000_000;
 const USAGE = [
   "Использование: node speedtest.mjs <URL> [-n 10] [--timeout 30] [--csv файл.csv]",
   "  -n, --requests  количество запросов (по умолчанию 10)",
   "  --timeout       таймаут одного запроса в секундах (по умолчанию 30)",
   "  --csv           сохранить результаты в CSV-файл",
 ].join("\n");
-const RESULT_FIELDS = ["№", "статус", "время, мс", "объём, байт", "скорость, Мбит/с", "ошибка"];
+export const RESULT_FIELDS = ["№", "статус", "время, мс", "объём, байт", "скорость, Мбит/с", "ошибка"];
 
 function fail(message) {
   console.error(`Ошибка: ${message}`);
@@ -18,7 +19,7 @@ function fail(message) {
   process.exit(1);
 }
 
-function checkUrl(url) {
+export function checkUrl(url) {
   try {
     const { protocol, host } = new URL(url);
     return (protocol === "http:" || protocol === "https:") && host !== "";
@@ -27,7 +28,7 @@ function checkUrl(url) {
   }
 }
 
-function speedMbit(bytes, seconds) {
+export function speedMbit(bytes, seconds) {
   return seconds > 0 ? (bytes * 8) / MEGABIT / seconds : 0;
 }
 
@@ -41,7 +42,7 @@ function median(values) {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-async function fetchOnce(url, timeoutMs) {
+export async function fetchOnce(url, timeoutMs) {
   const start = performance.now();
   try {
     const response = await fetch(url, {
@@ -71,7 +72,7 @@ async function fetchOnce(url, timeoutMs) {
   }
 }
 
-async function runTest(url, count, timeoutMs, onResult) {
+export async function runTest(url, count, timeoutMs, onResult) {
   const results = [];
   for (let number = 1; number <= count; number++) {
     const result = { number, ...(await fetchOnce(url, timeoutMs)) };
@@ -81,7 +82,7 @@ async function runTest(url, count, timeoutMs, onResult) {
   return results;
 }
 
-function summarize(results) {
+export function summarize(results) {
   const ok = results.filter((r) => r.ok);
   const summary = { total: results.length, successes: ok.length };
   if (ok.length === 0) return summary;
@@ -99,7 +100,7 @@ function summarize(results) {
   };
 }
 
-function resultRows(results) {
+export function resultRows(results) {
   return results.map((r) => ({
     "№": r.number,
     статус: r.ok ? "ok" : "ошибка",
@@ -110,7 +111,7 @@ function resultRows(results) {
   }));
 }
 
-function summaryRows(summary) {
+export function summaryRows(summary) {
   const rows = [
     ["Запросов", summary.total],
     ["Успешных", summary.successes],
@@ -128,7 +129,7 @@ function summaryRows(summary) {
   return rows;
 }
 
-function summaryLines(summary) {
+export function summaryLines(summary) {
   const lines = [`Запросов: ${summary.total} (успешных: ${summary.successes})`];
   if (!summary.successes) return [...lines, "Нет успешных запросов"];
   return [
@@ -140,7 +141,7 @@ function summaryLines(summary) {
   ];
 }
 
-function progressLine(result, total) {
+export function progressLine(result, total) {
   const prefix = `[${result.number}/${total}]`;
   if (!result.ok) return `${prefix} ошибка: ${result.error}`;
   const mbit = speedMbit(result.bytes, result.seconds);
@@ -157,7 +158,7 @@ function csvLine(cells) {
   return cells.map(csvCell).join(";");
 }
 
-function buildCsv(results, summary) {
+export function buildCsv(results, summary) {
   const lines = [csvLine(RESULT_FIELDS)];
   for (const row of resultRows(results)) {
     lines.push(csvLine(RESULT_FIELDS.map((field) => row[field])));
@@ -216,4 +217,6 @@ async function main() {
   process.exitCode = summary.successes ? 0 : 1;
 }
 
-main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}

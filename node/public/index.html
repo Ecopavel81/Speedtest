@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Замер скорости скачивания</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%232f6fed'/%3E%3Cpath d='M4 10.5 7 7l2.2 2.2L12 5.5' stroke='white' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="head">
+        <h1>Замер скорости скачивания</h1>
+        <p class="lead">
+          Запросы идут строго последовательно, ответ читается потоком. Каждый следующий
+          запрос начинается только после того, как предыдущий скачан полностью.
+        </p>
+      </header>
+
+      <form id="form" class="card form" novalidate>
+        <div class="field field--wide">
+          <label for="url">Адрес</label>
+          <input
+            id="url"
+            name="url"
+            type="text"
+            inputmode="url"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="https://example.com/big.jpg"
+          />
+        </div>
+
+        <div class="field">
+          <label for="requests">Количество запросов</label>
+          <input id="requests" name="requests" type="number" min="1" max="100" step="1" value="10" />
+        </div>
+
+        <div class="field">
+          <label for="timeout">Таймаут запроса, с</label>
+          <input id="timeout" name="timeout" type="number" min="1" step="1" value="30" />
+        </div>
+
+        <div class="actions">
+          <button id="run" class="btn btn--primary" type="submit">Запустить</button>
+          <button id="stop" class="btn" type="button" hidden>Остановить</button>
+        </div>
+      </form>
+
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <section id="progress" class="card progress" hidden aria-live="polite">
+        <div class="progress__head">
+          <span id="progress-text">Запуск…</span>
+          <span id="progress-count" class="muted"></span>
+        </div>
+        <div class="progress__track">
+          <div id="progress-bar" class="progress__bar" style="width: 0%"></div>
+        </div>
+      </section>
+
+      <section id="metrics" class="metrics" hidden>
+        <div class="card metric">
+          <span class="metric__label">Среднее время, мс</span>
+          <strong id="metric-avg" class="metric__value">—</strong>
+        </div>
+        <div class="card metric">
+          <span class="metric__label">Скачано, МБ</span>
+          <strong id="metric-bytes" class="metric__value">—</strong>
+        </div>
+        <div class="card metric">
+          <span class="metric__label">Средняя скорость, Мбит/с</span>
+          <strong id="metric-speed" class="metric__value">—</strong>
+        </div>
+      </section>
+
+      <p id="caption" class="caption" hidden></p>
+
+      <section id="results-block" class="card table-block" hidden>
+        <div class="table-block__head">
+          <h2>По запросам</h2>
+        </div>
+        <div class="table-scroll">
+          <table class="table">
+            <thead>
+              <tr>
+                <th class="num">№</th>
+                <th>статус</th>
+                <th class="num">время, мс</th>
+                <th class="num">объём, байт</th>
+                <th class="num">скорость, Мбит/с</th>
+                <th>ошибка</th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="summary-block" class="card table-block" hidden>
+        <h2>Итоги</h2>
+        <div class="table-scroll">
+          <table class="table table--summary">
+            <thead>
+              <tr>
+                <th>показатель</th>
+                <th class="num">значение</th>
+              </tr>
+            </thead>
+            <tbody id="summary-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p class="actions actions--download">
+        <button id="download" class="btn" type="button" disabled>Скачать CSV</button>
+      </p>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
