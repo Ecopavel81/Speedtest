@@ -1,0 +1,16 @@
+{
+  "name": "speedtest-node",
+  "version": "1.0.0",
+  "description": "Замер скорости скачивания: последовательные запросы к одному адресу",
+  "type": "module",
+  "main": "speedtest.mjs",
+  "bin": {
+    "speedtest": "speedtest.mjs"
+  },
+  "scripts": {
+    "start": "node speedtest.mjs"
+  },
+  "engines": {
+    "node": ">=18.3"
+  }
+}
